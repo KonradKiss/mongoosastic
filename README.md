@@ -22,6 +22,7 @@ Mongoosastic is a [mongoose](http://mongoosejs.com/) plugin that can automatical
   - [Creating mappings on-demand](#creating-mappings-on-demand)
 - [Queries](#queries)
   - [Hydration](#hydration)
+    - [Population](#population)
 
 ## Installation
 
@@ -536,3 +537,43 @@ var User = new Schema({
 
 User.plugin(mongoosastic, {hydrate:true, hydrateOptions: {lean: true}})
 ```
+
+#### Population
+When hydration is used, you can set population settings using `populate`. This forces
+a [populate](http://mongoosejs.com/docs/api.html#query_Query-populate) on the mongodb
+documents that are retrieved via hydration.
+
+```javascript
+var Book = new Schema({
+    title: {type:String, es_boost:2.0}
+  , author: {type:String, es_null_value:"Unknown Author"}
+  , publicationDate: {type:Date, es_type:'date'}
+  , owner: {type:Schema.Types.ObjectId, ref:'User'}
+});
+
+Book.search(
+  {
+    query_string: {
+      query: "Phlebas"
+    }
+  },
+  {
+    hydrate: true,
+    hydrateOptions: {
+      select: 'title author owner'
+    },
+    populate: [
+      {
+        path: 'owner',
+        select: '_id name'
+      }
+    ]
+  },
+  function(err, results) {
+    // results here
+  }
+);
+```
+
+This would return a Mongoose document describing a book
+where the `owner` key is populated by the `User` object.
